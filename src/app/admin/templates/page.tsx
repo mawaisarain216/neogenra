@@ -1,0 +1,4 @@
+import { prisma } from '@/lib/prisma'
+import { requireRole } from '@/lib/auth'
+import { notFound } from 'next/navigation'
+export default async function TemplatesPage(){const user=await requireRole(['SUPER_ADMIN','ADMIN','EDITOR']);if(!user)notFound();const templates=await prisma.builderTemplate.findMany({orderBy:{updatedAt:'desc'}});return <main className="admin-shell"><section className="glass-panel"><p className="eyebrow">DESIGN SYSTEM</p><h1>Templates</h1><p className="mt-2 text-white/45">Reusable page, section, header and footer compositions.</p><div className="mt-8 grid gap-3 md:grid-cols-3">{templates.map(t=><article key={t.id} className="rounded-2xl border border-white/10 p-5"><div className="text-xs uppercase tracking-[.18em] text-white/35">{t.type}</div><h2 className="mt-3 text-xl font-semibold">{t.name}</h2><p className="mt-2 text-sm text-white/45">{t.description||'Reusable builder template'}</p></article>)}</div></section></main>}

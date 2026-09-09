@@ -1,0 +1,2 @@
+'use client'
+export default function AdminLogout(){async function logout(){const r=await fetch('/api/admin/csrf');const t=r.ok?(await r.json()).token:'';await fetch('/api/auth/logout',{method:'POST',headers:{'x-csrf-token':t}});location.href='/admin/login'}return <button onClick={logout} className="mt-5 rounded-full border border-white/10 px-3 py-2 text-xs text-white/50 hover:text-white">Sign out</button>}

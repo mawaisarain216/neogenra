@@ -1,0 +1,9 @@
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import { requireRole } from '@/lib/auth'
+import { requireCsrf } from '@/lib/csrf'
+import { audit } from '@/lib/audit'
+const block=z.object({id:z.string().min(1).max(100),type:z.string().min(1).max(40),props:z.record(z.string(),z.unknown()),style:z.record(z.string(),z.unknown()).optional(),children:z.array(z.any()).max(200).optional()})
+const patch=z.object({content:z.array(block).max(200).optional(),status:z.enum(['DRAFT','REVIEW','PUBLISHED','ARCHIVED']).optional(),title:z.string().min(1).max(160).optional(),description:z.string().max(500).nullable().optional(),seoTitle:z.string().max(160).nullable().optional(),seoDescription:z.string().max(320).nullable().optional(),canonicalUrl:z.string().url().nullable().optional(),noIndex:z.boolean().optional(),ogImage:z.string().url().nullable().optional()})
+export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){try{const user=await requireRole(['SUPER_ADMIN','ADMIN','EDITOR']);await requireCsrf(req);const {id}=await params;const parsed=patch.parse(await req.json());const before=await prisma.page.findUnique({where:{id}});if(!before)return NextResponse.json({error:'Not found'},{status:404});const item=await prisma.$transaction(async tx=>{const revCount=await tx.revision.count({where:{pageId:id}});await tx.revision.create({data:{entity:'page',snapshot:before as any,version:revCount+1,createdById:user.id,pageId:id}});return tx.page.update({where:{id},data:parsed as any})});await audit({userId:user.id,action:parsed.status==='PUBLISHED'?'PUBLISH':'UPDATE',entity:'page',entityId:id,request:req});return NextResponse.json({item})}catch(e){const m=(e as Error).message;return NextResponse.json({error:m==='CSRF'?'Invalid security token':m==='UNAUTHORIZED'?'Unauthorized':'Invalid request'},{status:m==='CSRF'?403:m==='UNAUTHORIZED'?401:400})}}

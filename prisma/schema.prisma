@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  AUTHOR
+}
+enum PublishStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+  SETTINGS_CHANGE
+  ROLLBACK
+  MFA_ENABLE
+  MFA_DISABLE
+  MEDIA_UPLOAD
+}
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+  SPAM
+}
+enum TemplateType {
+  PAGE
+  SECTION
+  HEADER
+  FOOTER
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String?
+  passwordHash String?
+  role Role @default(EDITOR)
+  isActive Boolean @default(true)
+  failedLoginCount Int @default(0)
+  lockedUntil DateTime?
+  mfaEnabled Boolean @default(false)
+  mfaSecretEnc String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  auditLogs AuditLog[]
+  revisions Revision[]
+  articles Article[] @relation("ArticleAuthor")
+}
+
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId, expiresAt])
+}
+
+model Page {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  description String?
+  content Json
+  status PublishStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noIndex Boolean @default(false)
+  ogImage String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revisions Revision[]
+}
+
+model Project {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  client String?
+  category String?
+  excerpt String?
+  content Json
+  coverImage String?
+  gallery Json?
+  status PublishStatus @default(DRAFT)
+  featured Boolean @default(false)
+  seoTitle String?
+  seoDescription String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revisions Revision[]
+}
+
+model Service {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  shortDescription String?
+  content Json
+  icon String?
+  sortOrder Int @default(0)
+  published Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeamMember {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  role String
+  bio String?
+  image String?
+  socials Json?
+  sortOrder Int @default(0)
+  published Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Testimonial {
+  id String @id @default(cuid())
+  name String
+  company String?
+  quote String
+  image String?
+  sortOrder Int @default(0)
+  published Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  excerpt String?
+  content Json
+  coverImage String?
+  status ArticleStatus @default(DRAFT)
+  category String?
+  tags Json?
+  authorId String?
+  author User? @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  publishedAt DateTime?
+  seoTitle String?
+  seoDescription String?
+  noIndex Boolean @default(false)
+  revisions Revision[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, publishedAt])
+  @@index([category, publishedAt])
+}
+
+model BuilderTemplate {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  type TemplateType @default(SECTION)
+  description String?
+  content Json
+  isGlobal Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NavigationItem {
+  id String @id @default(cuid())
+  label String
+  href String
+  parentId String?
+  parent NavigationItem? @relation("NavigationTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavigationItem[] @relation("NavigationTree")
+  sortOrder Int @default(0)
+  enabled Boolean @default(true)
+  openInNewTab Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([parentId, sortOrder])
+}
+
+model SiteSetting {
+  id String @id @default(cuid())
+  key String @unique
+  value Json
+  updatedAt DateTime @updatedAt
+}
+
+model MediaAsset {
+  id String @id @default(cuid())
+  url String
+  publicId String?
+  filename String
+  mimeType String
+  sizeBytes Int
+  altText String?
+  width Int?
+  height Int?
+  folder String?
+  createdAt DateTime @default(now())
+  @@index([folder, createdAt])
+}
+
+model Lead {
+  id String @id @default(cuid())
+  name String
+  email String?
+  phone String?
+  company String?
+  service String?
+  message String
+  status LeadStatus @default(NEW)
+  source String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+}
+
+model RateLimitEvent {
+  id String @id @default(cuid())
+  keyHash String
+  createdAt DateTime @default(now())
+  @@index([keyHash, createdAt])
+}
+
+model Redirect {
+  id String @id @default(cuid())
+  fromPath String @unique
+  toPath String
+  statusCode Int @default(301)
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Revision {
+  id String @id @default(cuid())
+  entity String
+  snapshot Json
+  version Int
+  createdById String?
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  pageId String?
+  page Page? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  projectId String?
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  articleId String?
+  article Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([entity, createdAt])
+  @@index([pageId, version])
+  @@index([projectId, version])
+  @@index([articleId, version])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action AuditAction
+  entity String?
+  entityId String?
+  ipHash String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}

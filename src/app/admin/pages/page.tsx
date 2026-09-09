@@ -1,0 +1,3 @@
+import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
+export default async function Pages(){const items=await prisma.page.findMany({orderBy:{updatedAt:'desc'}});return <main className="admin-shell"><div className="flex items-center justify-between"><div><p className="eyebrow">CONTENT</p><h1>Pages</h1></div><Link href="/admin/pages/new" className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black">New page</Link></div><div className="mt-8 grid gap-3">{items.map(x=><Link href={`/admin/pages/${x.id}`} key={x.id} className="glass-panel flex items-center justify-between"><span>{x.title}<small className="ml-3 text-white/35">/{x.slug}</small></span><span className="text-xs text-white/40">{x.status}</span></Link>)}</div></main>}

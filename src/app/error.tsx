@@ -1,0 +1,2 @@
+'use client'
+export default function Error({reset}:{error:Error&{digest?:string};reset:()=>void}){return <main className="min-h-[60vh] grid place-items-center p-8"><div className="glass max-w-xl rounded-3xl p-10 text-center"><p className="eyebrow">NEOGENRA</p><h1 className="text-4xl font-bold">Something went wrong.</h1><p className="mt-4 text-white/55">The system could not complete this request. Try again.</p><button onClick={()=>reset()} className="mt-8 rounded-full bg-white px-6 py-3 font-semibold text-black">Try again</button></div></main>}
