@@ -40,12 +40,12 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
 
           <div className={styles.credentials}>
             <div><span>SUPER ADMIN EMAIL</span><strong>{DEFAULT_EMAIL}</strong></div>
-            <div><span>SUPER ADMIN PASSWORD</span><strong>Use the configured ADMIN_PASSWORD from your deployment environment.</strong></div>
+            <div><span>SUPER ADMIN PASSWORD</span><strong>Password configured in deployment environment.</strong></div>
           </div>
 
           <form method="post" action="/api/auth/login" className={styles.form}>
             <label><span>Email</span><input name="email" type="email" autoComplete="username" defaultValue={DEFAULT_EMAIL} required /></label>
-            <label><span>Password</span><input name="password" type="password" autoComplete="current-password" placeholder="Enter the configured Super Admin password" required /></label>
+            <label><span>Password</span><input name="password" type="password" autoComplete="current-password" placeholder="Enter Super Admin password" required /></label>
             <button type="submit">Enter Control Center <b>↗</b></button>
           </form>
 
