@@ -27,8 +27,6 @@ export async function POST(req: Request) {
   const configuredPassword = process.env.ADMIN_PASSWORD || ''
   let user = await prisma.user.findUnique({ where: { email } })
 
-  // First successful use of the deployment credentials creates the Super Admin.
-  // This removes the dependency on a manual production seed step.
   if (!user && configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword) {
     const passwordHash = await bcrypt.hash(configuredPassword, 12)
     user = await prisma.user.create({
@@ -42,8 +40,6 @@ export async function POST(req: Request) {
     })
   }
 
-  // If the configured bootstrap account already exists, ensure it has the
-  // intended Super Admin role after the correct deployment credentials are used.
   if (user && configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword && user.role !== 'SUPER_ADMIN') {
     const passwordHash = await bcrypt.hash(configuredPassword, 12)
     user = await prisma.user.update({
@@ -66,13 +62,16 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL('/admin/login?error=invalid', req.url))
   }
 
+  if (!user) return NextResponse.redirect(new URL('/admin/login?error=invalid', req.url))
+
+  const authenticatedUser = user
   const raw = randomToken()
   await prisma.$transaction([
-    prisma.session.create({ data: { tokenHash: hashToken(raw), userId: user.id, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 8) } }),
-    prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: 0, lockedUntil: null } }),
+    prisma.session.create({ data: { tokenHash: hashToken(raw), userId: authenticatedUser.id, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 8) } }),
+    prisma.user.update({ where: { id: authenticatedUser.id }, data: { failedLoginCount: 0, lockedUntil: null } }),
   ])
 
-  await audit({ userId: user.id, action: 'LOGIN', entity: 'Session', request: req })
+  await audit({ userId: authenticatedUser.id, action: 'LOGIN', entity: 'Session', request: req })
   const res = NextResponse.redirect(new URL('/admin', req.url))
   res.cookies.set('__Host-neogenra_session', raw, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
   return res
