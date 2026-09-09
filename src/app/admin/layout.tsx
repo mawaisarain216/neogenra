@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import AdminLogout from '@/components/AdminLogout'
@@ -12,6 +13,13 @@ const sections = [
 ]
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const requestHeaders = await headers()
+  const isLoginPage = requestHeaders.get('x-neogenra-admin-login') === '1'
+
+  // /admin/login is intentionally outside the authenticated shell, while every
+  // other /admin route remains protected by the server-side session check.
+  if (isLoginPage) return children
+
   const user = await getCurrentUser()
   if (!user) redirect('/admin/login')
 
