@@ -6,6 +6,7 @@ export function proxy(request: NextRequest) {
     const headers = new Headers(request.headers)
     headers.set('x-neogenra-admin-route', '1')
     if (request.nextUrl.pathname === '/admin/login') headers.set('x-neogenra-admin-login', '1')
+    if (request.nextUrl.pathname === '/admin/mfa') headers.set('x-neogenra-admin-mfa', '1')
     return NextResponse.next({ request: { headers } })
   }
   return NextResponse.next()
