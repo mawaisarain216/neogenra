@@ -1,6 +1,11 @@
+import Link from 'next/link'
+import { ArrowUpRight, Plus } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 
-export default async function Page() {
-  const items = await prisma.teamMember.findMany({ orderBy: { updatedAt: 'desc' } })
-  return <main className="admin-shell"><p className="eyebrow">CMS</p><h1>Team</h1><div className="mt-8 grid gap-3">{items.map((x) => <div key={x.id} className="glass-panel flex justify-between"><span>{x.name}</span><span className="text-xs text-white/40">{x.published ? 'LIVE' : 'HIDDEN'}</span></div>)}</div>{!items.length && <div className="glass-panel mt-3">No team members yet.</div>}</main>
+export default async function Team() {
+  const items = await prisma.teamMember.findMany({ orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }] })
+  return <main className="admin-shell"><div className="mx-auto max-w-6xl">
+    <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">CMS / PEOPLE</p><h1 className="mt-2 text-5xl font-bold tracking-[-.06em]">Team</h1><p className="mt-2 text-sm text-white/40">Profiles, roles, bios, social links and publishing state.</p></div><Link href="/admin/team/new" className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black"><Plus size={15} className="mr-1 inline"/>Add member</Link></div>
+    <div className="mt-8 grid gap-3">{items.map(x => <Link href={`/admin/team/${x.id}`} key={x.id} className="group rounded-[1.4rem] border border-white/10 bg-white/[.025] p-5 transition hover:border-white/25 hover:bg-white/[.045]"><div className="flex items-center justify-between gap-5"><div><span className="text-[10px] uppercase tracking-[.18em] text-white/35">{x.role}</span><h2 className="mt-2 text-xl font-semibold">{x.name}</h2><p className="mt-1 text-sm text-white/40">{x.bio || 'No biography yet.'}</p></div><div className="flex items-center gap-3 text-xs text-white/40"><span>{x.published ? 'LIVE' : 'HIDDEN'}</span><ArrowUpRight size={15}/></div></div></Link>)}{!items.length && <div className="rounded-[1.4rem] border border-dashed border-white/15 p-10 text-center text-white/35">No team members yet.</div>}</div>
+  </div></main>
 }
