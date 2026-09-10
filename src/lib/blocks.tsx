@@ -35,5 +35,6 @@ export async function RenderBlocks({blocks}:{blocks:unknown}){
  if(type==='scene3d')return <section {...common} className={`${id} cms-scene3d`}><div><p className="eyebrow">{text(x.eyebrow)||'NEOGENRA / LAB'}</p><h2>{text(x.title)||'A living idea engine'}</h2><p>{text(x.caption)||'Move your pointer across the scene.'}</p></div><div className="scene-object" aria-hidden="true"><div className="scene-ring ring-one"/><div className="scene-ring ring-two"/><div className="scene-core"><i/><i/><i/><i/><i/><i/></div></div></section>
  if(type==='marquee'&&Array.isArray(x.items))return <div key={b.id||i} className={id} style={{...style,'--marquee-speed':`${Math.max(8,Math.min(80,Number(x.speed)||24))}s`} as CSSProperties}><div className="cms-marquee-track">{[...x.items,...x.items].map((item:any,j)=><span key={j}>{text(item)}<b>✦</b></span>)}</div></div>
  return null})
- return <div className="space-y-16">{styleNodes}<div>{render(tree)}</div></div>
+ const rendered=render(tree)
+ return <>{styleNodes}<div className="space-y-16">{rendered}</div></>
 }
