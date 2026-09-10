@@ -1,0 +1,45 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Loader2, Search } from 'lucide-react'
+
+const statuses = ['NEW', 'CONTACTED', 'QUALIFIED', 'WON', 'LOST', 'SPAM'] as const
+
+type Lead = { id: string; name: string; email: string | null; phone: string | null; company: string | null; service: string | null; message: string; status: typeof statuses[number]; source: string | null; createdAt: string }
+
+export default function LeadManager() {
+  const [items, setItems] = useState<Lead[]>([])
+  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState('ALL')
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+
+  async function load() {
+    const res = await fetch('/api/admin/leads?take=200', { cache: 'no-store' })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) return setError(body.error || 'Could not load leads')
+    setItems(body.items || [])
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function updateStatus(id: string, status: string) {
+    setBusy(id)
+    setError('')
+    try {
+      const csrf = await fetch('/api/admin/csrf', { cache: 'no-store' }).then(r => r.json()).then(x => x.token)
+      const res = await fetch('/api/admin/leads', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf }, body: JSON.stringify({ id, status }) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Update failed')
+      setItems(current => current.map(x => x.id === id ? { ...x, status: body.item.status } : x))
+    } catch (e) { setError((e as Error).message) }
+    setBusy('')
+  }
+
+  const filtered = useMemo(() => items.filter(x => {
+    const text = `${x.name} ${x.email || ''} ${x.company || ''} ${x.service || ''} ${x.message}`.toLowerCase()
+    return (filter === 'ALL' || x.status === filter) && text.includes(query.toLowerCase())
+  }), [items, query, filter])
+
+  return <main className="admin-shell"><div className="mx-auto max-w-6xl"><div className="mb-8"><p className="eyebrow">CRM / INBOUND</p><h1 className="mt-2 text-5xl font-bold tracking-[-.06em]">Leads</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">Qualify project enquiries without exposing lead data to public routes.</p></div>{error && <div className="mb-5 rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-sm text-red-100">{error}</div>}<div className="mb-5 flex flex-wrap gap-2"><div className="flex min-w-[240px] flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/[.025] px-4"><Search size={15} className="text-white/30"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search leads…" className="w-full bg-transparent py-3 text-sm outline-none"/></div>{['ALL', ...statuses].map(x=><button key={x} onClick={()=>setFilter(x)} className={`rounded-full border px-3 py-2 text-xs ${filter===x?'border-white bg-white text-black':'border-white/10 text-white/50'}`}>{x}</button>)}</div><div className="grid gap-3">{filtered.map(x=><article key={x.id} className="rounded-[1.4rem] border border-white/10 bg-white/[.025] p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-xl font-semibold">{x.name}</h2><p className="mt-1 text-sm text-white/45">{x.email || 'No email'}{x.company ? ` · ${x.company}` : ''}{x.service ? ` · ${x.service}` : ''}</p></div><label className="flex items-center gap-2 text-xs text-white/35"><span>Status</span><select value={x.status} disabled={busy===x.id} onChange={e=>updateStatus(x.id,e.target.value)} className="rounded-full border border-white/10 bg-black px-3 py-2 text-white">{statuses.map(s=><option key={s}>{s}</option>)}</select>{busy===x.id&&<Loader2 size={13} className="animate-spin"/>}</label></div><p className="mt-4 max-w-4xl whitespace-pre-wrap text-sm leading-6 text-white/60">{x.message}</p><div className="mt-4 flex flex-wrap gap-4 text-[10px] uppercase tracking-[.14em] text-white/25"><span>{x.source || 'Website'}</span><span>{new Date(x.createdAt).toLocaleString()}</span>{x.phone&&<span>{x.phone}</span>}</div></article>)}{!filtered.length&&<div className="rounded-[1.4rem] border border-dashed border-white/15 p-10 text-center text-white/35">No leads match the current filter.</div>}</div></div></main>
+}
