@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashToken, randomToken } from '@/lib/security'
+import { mfaProof } from '@/lib/mfa'
 import bcrypt from 'bcryptjs'
 import { audit } from '@/lib/audit'
 import { enforceRateLimit } from '@/lib/rate-limit'
+
+const SESSION_COOKIE = '__Host-neogenra_session'
+const MFA_COOKIE = '__Host-neogenra_mfa'
 
 export async function POST(req: Request) {
   if (!(await enforceRateLimit(req, 'login', 20, 15 * 60 * 1000))) return NextResponse.redirect(new URL('/admin/login?error=rate', req.url))
@@ -29,39 +33,23 @@ export async function POST(req: Request) {
 
   if (!user && configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword) {
     const passwordHash = await bcrypt.hash(configuredPassword, 12)
-    user = await prisma.user.create({
-      data: {
-        email: configuredEmail,
-        name: 'Neogenra Super Admin',
-        passwordHash,
-        role: 'SUPER_ADMIN',
-        isActive: true,
-      },
-    })
+    user = await prisma.user.create({ data: { email: configuredEmail, name: 'Neogenra Super Admin', passwordHash, role: 'SUPER_ADMIN', isActive: true } })
   }
 
   if (user && configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword && user.role !== 'SUPER_ADMIN') {
     const passwordHash = await bcrypt.hash(configuredPassword, 12)
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash, role: 'SUPER_ADMIN', isActive: true, failedLoginCount: 0, lockedUntil: null },
-    })
+    user = await prisma.user.update({ where: { id: user.id }, data: { passwordHash, role: 'SUPER_ADMIN', isActive: true, failedLoginCount: 0, lockedUntil: null } })
   }
 
   const locked = user?.lockedUntil && user.lockedUntil > new Date()
   const valid = !!user && user.isActive && !locked && !!user.passwordHash && await bcrypt.compare(password, user.passwordHash)
-
   if (!valid) {
     if (user) {
       const count = user.failedLoginCount + 1
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { failedLoginCount: count, lockedUntil: count >= 8 ? new Date(Date.now() + 15 * 60 * 1000) : null },
-      })
+      await prisma.user.update({ where: { id: user.id }, data: { failedLoginCount: count, lockedUntil: count >= 8 ? new Date(Date.now() + 15 * 60 * 1000) : null } })
     }
     return NextResponse.redirect(new URL('/admin/login?error=invalid', req.url))
   }
-
   if (!user) return NextResponse.redirect(new URL('/admin/login?error=invalid', req.url))
 
   const authenticatedUser = user
@@ -72,7 +60,11 @@ export async function POST(req: Request) {
   ])
 
   await audit({ userId: authenticatedUser.id, action: 'LOGIN', entity: 'Session', request: req })
-  const res = NextResponse.redirect(new URL('/admin', req.url))
-  res.cookies.set('__Host-neogenra_session', raw, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
+  const destination = authenticatedUser.mfaEnabled ? '/admin/mfa' : '/admin'
+  const res = NextResponse.redirect(new URL(destination, req.url))
+  res.cookies.set(SESSION_COOKIE, raw, { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
+  if (!authenticatedUser.mfaEnabled) {
+    res.cookies.set(MFA_COOKIE, mfaProof(raw), { httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
+  }
   return res
 }
