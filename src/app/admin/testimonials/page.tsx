@@ -1,6 +1,11 @@
+import Link from 'next/link'
+import { ArrowUpRight, Plus } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 
-export default async function Page() {
-  const items = await prisma.testimonial.findMany({ orderBy: { updatedAt: 'desc' } })
-  return <main className="admin-shell"><p className="eyebrow">CMS</p><h1>Testimonials</h1><div className="mt-8 grid gap-3">{items.map((x) => <div key={x.id} className="glass-panel flex justify-between"><span>{x.name}{x.company ? ` — ${x.company}` : ''}</span><span className="text-xs text-white/40">{x.published ? 'LIVE' : 'HIDDEN'}</span></div>)}</div>{!items.length && <div className="glass-panel mt-3">No testimonials yet.</div>}</main>
+export default async function Testimonials() {
+  const items = await prisma.testimonial.findMany({ orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }] })
+  return <main className="admin-shell"><div className="mx-auto max-w-6xl">
+    <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">CMS / PROOF</p><h1 className="mt-2 text-5xl font-bold tracking-[-.06em]">Testimonials</h1><p className="mt-2 text-sm text-white/40">Client quotes that power proof and conversion sections.</p></div><Link href="/admin/testimonials/new" className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black"><Plus size={15} className="mr-1 inline"/>Add testimonial</Link></div>
+    <div className="mt-8 grid gap-3">{items.map(x => <Link href={`/admin/testimonials/${x.id}`} key={x.id} className="group rounded-[1.4rem] border border-white/10 bg-white/[.025] p-5 transition hover:border-white/25 hover:bg-white/[.045]"><div className="flex items-start justify-between gap-5"><div><p className="text-lg leading-7">“{x.quote}”</p><p className="mt-4 text-sm text-white/45">{x.name}{x.company ? ` · ${x.company}` : ''}</p></div><div className="flex items-center gap-3 text-xs text-white/40"><span>{x.published ? 'LIVE' : 'HIDDEN'}</span><ArrowUpRight size={15}/></div></div></Link>)}{!items.length && <div className="rounded-[1.4rem] border border-dashed border-white/15 p-10 text-center text-white/35">No testimonials yet.</div>}</div>
+  </div></main>
 }
