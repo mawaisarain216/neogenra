@@ -1,2 +1,11 @@
-import AdminEditor from '@/components/AdminEditor'
-export default function DesignSystem(){return <AdminEditor entity="setting" title="Global design system" fields={{key:'design.system',value:'{"fontSans":"Inter","fontDisplay":"Inter","radius":"28px","motion":"cinematic","glass":"functional"}'}}/>}
+import { prisma } from '@/lib/prisma'
+import ThemeSelector from '@/components/admin/ThemeSelector'
+
+export default async function DesignSystem() {
+  let theme = 'obsidian'
+  try {
+    const setting = await prisma.siteSetting.findUnique({ where: { key: 'design.theme' }, select: { value: true } })
+    if (typeof setting?.value === 'string') theme = setting.value
+  } catch {}
+  return <ThemeSelector initialTheme={['obsidian','editorial','signal','swiss','aurora'].includes(theme) ? theme : 'obsidian'} />
+}
