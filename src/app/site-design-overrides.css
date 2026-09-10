@@ -1,0 +1,16 @@
+:root{--bg:var(--site-bg,#080808);--fg:var(--site-text,#f5f5f2);--muted:var(--site-muted,#8c8c87);--line:var(--site-border,rgba(255,255,255,.14));--glass:var(--site-surface,#111)}
+body{background:var(--site-bg);color:var(--site-text);font-family:var(--site-body-font),Arial,Helvetica,sans-serif;font-size:var(--site-base-size);transition:background var(--site-transition),color var(--site-transition)}
+h1,h2,h3,h4,h5,h6,.display,.section-title{font-family:var(--site-heading-font),Arial,Helvetica,sans-serif;font-weight:var(--site-display-weight);letter-spacing:var(--site-letter-spacing)}
+.display{font-size:var(--site-h1-size)}.section-title{font-size:var(--site-h2-size)}
+.glass{background:var(--site-surface);border-color:var(--site-border);border-radius:var(--site-radius);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+.pill{background:var(--site-surface-alt);border-color:var(--site-border);border-radius:var(--site-button-radius)}
+.noise{display:block}.magnetic-cta{border-radius:var(--site-button-radius);background:var(--site-primary);color:var(--site-bg);box-shadow:none}.magnetic-cta:hover{box-shadow:none}
+.cinematic-hero{background:var(--site-bg)}.cinematic-hero-copy{width:min(var(--site-container),calc(100% - 40px))}.cinematic-hero h1{font-size:var(--site-h1-size);font-weight:var(--site-display-weight);letter-spacing:var(--site-letter-spacing)}.cinematic-hero-copy>p{color:var(--site-muted)}
+.hero-grid{opacity:var(--site-grid-opacity,.18)}
+.site-container,.experience-intro-inner{max-width:var(--site-container)}
+.capability-section{background:var(--site-surface)}
+.contact-glass{background:var(--site-surface);border:1px solid var(--site-border);border-radius:var(--site-radius)!important}
+body[data-glass="off"] .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+body[data-noise="off"] .noise{display:none}
+body[data-motion="off"] *,body[data-motion="off"] *::before,body[data-motion="off"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+body[data-site-theme="cms"] .theme-card{background:var(--site-surface);border-color:var(--site-border)}
