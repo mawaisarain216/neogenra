@@ -1,3 +1,20 @@
 'use client'
-import Link from 'next/link';import {Menu,X} from 'lucide-react';import {useState} from 'react';import type {SiteDesign} from '@/lib/site-design'
-export default function HeaderClient({links,design}:{links:string[][];design:SiteDesign}){const [open,setOpen]=useState(false);const navClass=design.header.style==='centered'?'justify-center':design.header.style==='editorial'?'justify-between':'';return <header className="site-header" style={{position:design.header.sticky?'fixed':'absolute'}}><nav className={`glass mx-auto flex max-w-6xl items-center ${navClass} px-4 py-3`} style={{minHeight:design.layout.headerHeight,borderRadius:design.header.style==='editorial'?'0px':design.buttons.radius,background:design.colors.headerBg}}><Link href="/" className="font-black tracking-[-.06em] text-xl" style={{fontFamily:design.typography.headingFont}}>{design.brand.logoText}</Link><div className="hidden md:flex items-center gap-5 text-sm" style={{color:design.colors.muted}}>{links.map(([n,h])=><Link key={h} href={h} className="hover:text-white">{n}</Link>)}</div><div className="flex items-center gap-2"><Link href={design.header.ctaHref} className="hidden sm:block px-4 py-2 text-sm font-semibold" style={{borderRadius:design.buttons.radius,background:design.buttons.style==='solid'?design.colors.primary:'transparent',color:design.buttons.style==='solid'?design.colors.background:design.colors.text,border:design.buttons.style==='outline'?`1px solid ${design.colors.border}`:'1px solid transparent'}}>{design.header.ctaLabel}</Link><button aria-label={open?'Close menu':'Open menu'} aria-expanded={open} onClick={()=>setOpen(!open)} className="glass rounded-full p-2 md:hidden">{open?<X size={18}/>:<Menu size={18}/>}</button></div></nav>{design.header.showTopBar&&<div className="mx-auto max-w-6xl px-4 py-2 text-center text-[10px] uppercase tracking-[.2em]" style={{color:design.colors.muted}}>{design.header.topBarText}</div>}{open&&<div className="glass mx-auto mt-2 max-w-6xl rounded-3xl p-5 md:hidden">{links.concat([[design.header.ctaLabel,design.header.ctaHref]]).map(([n,h])=><Link onClick={()=>setOpen(false)} key={h} href={h} className="block border-b border-white/10 py-4 text-lg">{n}</Link>)}</div>}</header>}
+
+import Link from 'next/link'
+import { Menu, X, ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
+
+const links = [['Work','/work'],['Services','/services'],['About','/about'],['Insights','/insights']]
+
+export default function HeaderClient(){
+  const [open,setOpen]=useState(false)
+  return <header className="ng-header">
+    <nav className="ng-nav">
+      <Link href="/" className="ng-logo">neo<span>genra</span><sup>®</sup></Link>
+      <div className="ng-nav-links">{links.map(([label,href])=><Link href={href} key={href}>{label}</Link>)}</div>
+      <Link href="/contact" className="ng-nav-cta">Start a project <ArrowUpRight size={15}/></Link>
+      <button className="ng-menu" aria-label={open?'Close menu':'Open menu'} aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<X size={21}/>:<Menu size={21}/>}</button>
+    </nav>
+    {open&&<div className="ng-mobile-menu">{links.concat([['Start a project','/contact']]).map(([label,href])=><Link onClick={()=>setOpen(false)} href={href} key={href}>{label}<ArrowUpRight size={18}/></Link>)}</div>}
+  </header>
+}
