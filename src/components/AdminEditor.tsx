@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, ChevronLeft, Loader2, Save, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
@@ -41,7 +41,7 @@ export default function AdminEditor({ entity, title, fields, id, backHref = `/ad
   const [error, setError] = useState('')
   const [dirty, setDirty] = useState(false)
 
-  useMemo(() => {
+  useEffect(() => {
     fetch('/api/admin/csrf', { cache: 'no-store' })
       .then(r => r.json())
       .then(x => setCsrf(x.token || ''))
